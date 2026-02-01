@@ -32,5 +32,5 @@
 - MCP API 参考文档
 - 故障排查指南
 
-[Unreleased]: https://github.com/your-username/feishu-skill/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/your-username/feishu-skill/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Tbthr/feishu-skill/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Tbthr/feishu-skill/releases/tag/v1.0.0

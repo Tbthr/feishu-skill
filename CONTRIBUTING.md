@@ -19,7 +19,7 @@
 
 1. **Fork 本仓库**
    ```bash
-   git clone https://github.com/your-username/feishu-skill.git
+   git clone https://github.com/Tbthr/feishu-skill.git
    ```
 
 2. **创建功能分支**

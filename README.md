@@ -16,42 +16,26 @@
 
 ## 安装方式
 
-### 方式一：Plugin Marketplace（推荐）
-
 ```bash
 # 1. 添加 marketplace
-/plugin marketplace add your-username/feishu-skill
+/plugin marketplace add Tbthr/feishu-skill
 
 # 2. 安装 plugin
 /plugin install feishu-skills
 ```
 
-### 方式二：Git Clone
-
-```bash
-# 克隆到用户全局目录（所有项目可用）
-git clone https://github.com/your-username/feishu-skill.git ~/.claude/skills/feishu-skills
-
-# 或克隆到项目目录（仅当前项目可用）
-git clone https://github.com/your-username/feishu-skill.git .claude/skills/feishu-skills
-```
-
-### 方式三：手动下载
-
-1. 下载 [Releases](https://github.com/your-username/feishu-skill/releases) 中的 zip 文件
-2. 解压到 `.claude/skills/feishu-skills/` 目录
-
 ## 快速开始
 
-### 1. 安装配置
+### 1. 配置飞书 MCP
+
+通过 `/plugin` 安装后，需要配置飞书凭据：
 
 ```bash
-# 克隆项目到本地
-git clone https://github.com/your-username/feishu-skill.git
-cd feishu-skill
+# 进入已安装的 skill 目录
+cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
 
-# 运行安装脚本
-bash skills/feishu-analyst/scripts/setup.sh install
+# 运行配置脚本
+bash setup.sh install
 ```
 
 按提示输入你的飞书 **App ID** 和 **App Secret**。
