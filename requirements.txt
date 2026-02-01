@@ -1,0 +1,7 @@
+# Python dependencies for feishu-analyst skill scripts
+# The scripts use only Python standard library
+# No external dependencies required
+
+# For development/testing (optional)
+# pytest>=7.0.0
+# pydantic>=2.0.0
