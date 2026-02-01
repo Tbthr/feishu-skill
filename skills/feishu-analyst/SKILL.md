@@ -16,6 +16,23 @@ If not configured, guide user to run:
 bash scripts/setup.sh install
 ```
 
+## ⚠️ Best Practices
+
+> **CRITICAL: Use Built-in Scripts**
+>
+> This skill includes pre-built, tested Python scripts in `scripts/`:
+>
+> ✅ **DO** - Import and use `DocumentProcessor`, `MCPResponseValidator`, etc.
+> ❌ **DON'T** - Write your own JSON parser for Feishu blocks
+>
+> **Why?**
+> - Built-in scripts handle **47 block types** (your parser will miss many)
+> - Includes **error handling** for edge cases (malformed responses, nested structures)
+> - **Actively maintained** with bug fixes
+> - Saves tokens and time
+>
+> See "Process with Skill Scripts" below for usage.
+
 ## Quick Start
 
 ### For PRD Analysis (Recommended)
@@ -62,10 +79,26 @@ with open("doc_blocks.json", "w") as f:
 
 ### 3. Process with Skill Scripts
 
+> ⚠️ **IMPORTANT**: Always use the built-in scripts from the skill directory instead of writing your own parser. The built-in scripts are:
+> - **Pre-tested** with Feishu MCP responses
+> - **Feature-complete** (47 block types, error handling, edge cases)
+> - **Maintained** with bug fixes and updates
+>
+> Writing your own parser will result in limited functionality and maintenance burden.
+
+**Get the skill base directory** (available at the start of the skill):
+```python
+# The skill base directory is shown when the skill is loaded
+# It follows this pattern:
+# Base directory for this skill: /Users/xxx/.claude/plugins/cache/.../skills/feishu-analyst
+SKILL_BASE = "/path/to/skill"  # Copy from skill output
+```
+
+**Import and use built-in scripts:**
 ```python
 import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "scripts"))
+sys.path.insert(0, f"{SKILL_BASE}/scripts")
+
 from validator import MCPResponseValidator
 from document_processor import DocumentProcessor
 
@@ -121,6 +154,9 @@ When invoked, the command will:
 5. Generate structured review using output template
 
 ### For General Text Analysis (wikis, notes)
+
+> ⚠️ **Use the built-in `DocumentProcessor`** - don't write custom parsers!
+
 1. Save blocks to file
 2. Use `document_processor.to_markdown()` for conversion
 3. Process Markdown for analysis
