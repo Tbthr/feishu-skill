@@ -18,6 +18,24 @@ bash scripts/setup.sh install
 
 ## Quick Start
 
+### For PRD Analysis (Recommended)
+
+**Use the dedicated slash command**: `/feishu-prd-analyse <URL>`
+
+Example:
+```
+/feishu-prd-analyse https://dy3m1s1v7v.feishu.cn/docx/CgMCdRMh8oMtDKxVcURcrb0DnVr
+```
+
+This command will automatically:
+1. Use the feishu-analyst skill to fetch the document
+2. Load the PRD checklist from `references/prd_checklist.md`
+3. Extract document content and convert to Markdown
+4. Apply systematic analysis framework
+5. Generate structured review with findings and recommendations
+
+### Manual Analysis
+
 ### 1. Extract Document ID
 
 **Document** (`/docx/DOC_ID`): Use `DOC_ID` directly
@@ -82,11 +100,28 @@ Located in `scripts/`:
 
 ## Analysis Approaches
 
-### For Text Analysis (PRDs, wikis, notes)
+### For PRD Analysis (Product Requirements)
+
+**Use the `/feishu-prd-analyse` command:**
+```
+/feishu-prd-analyse <URL>
+```
+
+When invoked, the command will:
+1. Extract document ID from URL (docx or wiki)
+2. Fetch document blocks via Feishu MCP
+3. Automatically load `prd_checklist.md` framework
+4. Apply systematic analysis across 4 dimensions:
+   - **Ambiguity Check**: Vague terms, metrics, timelines
+   - **Logic Consistency**: Contradictions, edge cases, preconditions
+   - **Data Integrity**: Type definitions, constraints, required fields
+   - **Completeness**: User stories, acceptance criteria, success metrics
+5. Generate structured review using output template
+
+### For General Text Analysis (wikis, notes)
 1. Save blocks to file
 2. Use `document_processor.to_markdown()` for conversion
 3. Process Markdown for analysis
-4. For PRDs, see [prd_checklist.md](references/prd_checklist.md)
 
 ### For Data Querying (tables, schedules, lists)
 1. Save blocks to file
@@ -100,6 +135,44 @@ Located in `scripts/`:
 - **Permission Denied**: Check document access or bot visibility
 - **API Errors**: Run `bash scripts/setup.sh check`
 - **Authorization Required**: User must authorize via browser (user mode)
+
+## Slash Command for PRD Analysis
+
+A dedicated slash command `/feishu-prd-analyse` is available for PRD analysis:
+
+```
+/feishu-prd-analyse <feishu_document_url>
+```
+
+### Examples
+
+**Analyze a PRD Document:**
+```
+/feishu-prd-analyse https://dy3m1s1v7v.feishu.cn/docx/CgMCdRMh8oMtDKxVcURcrb0DnVr
+```
+
+**Analyze a Wiki PRD:**
+```
+/feishu-prd-analyse https://xxx.feishu.cn/wiki/xxxxx
+```
+
+**What happens when invoked:**
+1. Command extracts document ID from URL
+2. Uses feishu-analyst skill to fetch document content via Feishu MCP
+3. Automatically loads `prd_checklist.md` from `references/`
+4. Applies systematic analysis framework
+5. Returns structured review with:
+   - Executive summary
+   - Critical findings (ambiguities, contradictions, data issues, gaps)
+   - Questions for product team
+   - Recommendations
+   - Overall assessment (Ready/Needs Revision/Major Gaps)
+
+### Tips
+
+- Use `/feishu-prd-analyse` for PRD analysis - it automatically applies the checklist
+- For other document types, use the skill directly with your specific requirements
+- Works with both `/docx/` and `/wiki/` URLs
 
 ## Reference Documentation
 

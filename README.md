@@ -9,6 +9,7 @@
 
 - **极简配置** - 一键安装，自动配置 MCP 服务器
 - **Token 节省** - 智能处理大文档，节省 **96-99%** 的 token 消耗
+- **PRD 智能分析** - 专用 `/feishu-prd-analyse` 命令，系统化评审产品需求文档
 - **类型完整** - 支持文档、Wiki、表格、白板等所有飞书内容类型
 - **Markdown 转换** - 自动转换为结构化 Markdown，便于分析
 - **表格数据提取** - 专门处理表格数据，支持结构化查询
@@ -57,6 +58,26 @@ bash setup.sh install
 ```
 
 ## 使用示例
+
+### PRD 智能分析（推荐）
+
+使用专用的 slash command 进行产品需求文档分析：
+
+```
+/feishu-prd-analyse https://xxx.feishu.cn/docx/xxxxx
+```
+
+该命令会自动：
+1. 提取文档内容并转换为 Markdown
+2. 应用系统化的 PRD 分析框架（4 个维度）
+3. 生成结构化评审报告，包括：
+   - 歧义检查（模糊术语、指标、时间线）
+   - 逻辑一致性（矛盾、边界情况）
+   - 数据完整性（类型定义、约束）
+   - 完整性评估（用户故事、验收标准）
+   - 改进建议和整体评估
+
+**适用于产品需求文档（PRD）的快速评审和质量分析。**
 
 ### 分析 Wiki 文档
 
@@ -142,6 +163,12 @@ https://xxx.feishu.cn/docx/xxxxx
 | `creation_processor.py` | 文档创建响应解析 |
 | `logger.py` | MCP 调用日志记录 |
 
+### Slash Commands
+
+| 命令 | 功能 |
+|------|------|
+| `/feishu-prd-analyse` | PRD 智能分析，自动应用系统化评审框架 |
+
 ## 项目结构
 
 ```
@@ -154,6 +181,9 @@ feishu-skill/
 ├── CONTRIBUTING.md                    # 贡献指南
 ├── .claude-plugin/
 │   └── marketplace.json               # Marketplace 配置
+├── .claude/
+│   └── commands/                      # Slash Commands
+│       └── feishu-prd-analyse.md      # PRD 分析命令
 └── skills/                            # Skills 目录
     └── feishu-analyst/
         ├── SKILL.md                   # Skill 定义文件
