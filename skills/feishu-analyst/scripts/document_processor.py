@@ -164,6 +164,7 @@ class DocumentProcessor:
         Feishu MCP may return blocks in different formats:
         1. Direct array of blocks
         2. Wrapped format: [{"type": "text", "text": "<JSON string>"}]
+        3. Wrapped format with extra text (e.g., whiteboard hints)
 
         Args:
             raw_blocks: Raw response from get_document_blocks
@@ -177,13 +178,22 @@ class DocumentProcessor:
             if isinstance(first, dict) and "text" in first:
                 text_content = first["text"]
                 if isinstance(text_content, str):
-                    # Parse the JSON string
+                    # Try parsing the full text content first
                     try:
                         parsed = json.loads(text_content)
                         if isinstance(parsed, list):
                             return parsed
                     except json.JSONDecodeError:
-                        pass
+                        # If parsing fails, try extracting JSON from text with extra content
+                        # Feishu MCP sometimes appends hint text after the JSON
+                        json_part = self._extract_json_from_text(text_content)
+                        if json_part:
+                            try:
+                                parsed = json.loads(json_part)
+                                if isinstance(parsed, list):
+                                    return parsed
+                            except json.JSONDecodeError:
+                                pass
 
         # Return as-is if it's already a block array
         if isinstance(raw_blocks, list):
@@ -191,6 +201,48 @@ class DocumentProcessor:
 
         # Return empty list for unknown format
         return []
+
+    def _extract_json_from_text(self, text: str) -> Optional[str]:
+        """
+        Extract JSON array from text that may have extra content after it.
+
+        Finds the first complete JSON array by matching brackets.
+
+        Args:
+            text: Text that starts with JSON but may have extra content
+
+        Returns:
+            JSON string or None if not found
+        """
+        if not text.startswith('['):
+            return None
+
+        bracket_count = 0
+        in_string = False
+        escape_next = False
+
+        for i, char in enumerate(text):
+            if escape_next:
+                escape_next = False
+                continue
+
+            if char == '\\' and in_string:
+                escape_next = True
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+
+            if not in_string:
+                if char == '[':
+                    bracket_count += 1
+                elif char == ']':
+                    bracket_count -= 1
+                    if bracket_count == 0:
+                        return text[:i + 1]
+
+        return None
 
     def save_blocks_to_file(self, blocks: List, document_id: str) -> Path:
         """
@@ -284,6 +336,18 @@ class DocumentProcessor:
                     code_text = block["code"].get("code", "")
                     if code_text and not text:
                         text = code_text
+
+                # Check list items (bullet, ordered, todo)
+                # List items use "bullet" field with elements
+                if "bullet" in block and isinstance(block["bullet"], dict):
+                    bullet_data = block["bullet"]
+                    bullet_elements = bullet_data.get("elements") or bullet_data.get("textElements", [])
+                    if bullet_elements and not text:
+                        bullet_text = "".join(
+                            elem.get("text_run", {}).get("content", "")
+                            for elem in bullet_elements
+                        )
+                        text = bullet_text
 
                 # Get heading level if applicable
                 level = None

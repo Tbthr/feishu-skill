@@ -204,3 +204,20 @@ def log_mcp_call(tool_name: str, params: Dict,
     size_kb = record.response_size / 1024
 
     return f"{status} {tool_name} ({size_kb:.1f} KB)"
+
+
+# Alias for consistency
+FeishuLogger = MCPLogger
+
+
+def get_logger(log_dir: str = "/tmp/feishu_mcp_logs") -> MCPLogger:
+    """
+    Get a logger instance.
+
+    Args:
+        log_dir: Directory to store logs
+
+    Returns:
+        MCPLogger instance
+    """
+    return MCPLogger(log_dir=log_dir)

@@ -37,8 +37,11 @@ class MCPResponseValidator:
     """
 
     # Expected keys for each tool type
+    # Note: get_feishu_document_info returns different structures for document vs wiki
+    # - Wiki: title, documentId, node_token, obj_token, space_id, _type="wiki"
+    # - Document: title, document_id, type, url
     EXPECTED_KEYS = {
-        "get_feishu_document_info": ["title", "type", "url", "document_id"],
+        "get_feishu_document_info": ["title"],  # Only require title, structure varies by type
         "get_feishu_document_blocks": ["blocks"],
         "search_feishu_documents": ["items"],
         "get_feishu_root_folder_info": ["root_folder", "wiki_spaces", "my_library"],
