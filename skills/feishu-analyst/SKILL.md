@@ -28,11 +28,12 @@ Example:
 ```
 
 This command will automatically:
-1. Use the feishu-analyst skill to fetch the document
-2. Load the PRD checklist from `references/prd_checklist.md`
-3. Extract document content and convert to Markdown
-4. Apply systematic analysis framework
-5. Generate structured review with findings and recommendations
+1. **Read the ENTIRE document** (all text, tables, whiteboards, images, diagrams, flowcharts, etc.)
+2. Use the feishu-analyst skill to fetch the document
+3. Load the PRD checklist from `references/prd_checklist.md`
+4. Extract document content and convert to Markdown
+5. Apply systematic analysis framework
+6. Generate structured review with findings and recommendations
 
 ### Manual Analysis
 
@@ -109,9 +110,10 @@ Located in `scripts/`:
 
 When invoked, the command will:
 1. Extract document ID from URL (docx or wiki)
-2. Fetch document blocks via Feishu MCP
-3. Automatically load `prd_checklist.md` framework
-4. Apply systematic analysis across 4 dimensions:
+2. **Fetch and read the ENTIRE document** - all text blocks, tables, whiteboards, images, diagrams, flowcharts, code blocks, and embedded content
+3. Fetch document blocks via Feishu MCP
+4. Automatically load `prd_checklist.md` framework
+5. Apply systematic analysis across 4 dimensions:
    - **Ambiguity Check**: Vague terms, metrics, timelines
    - **Logic Consistency**: Contradictions, edge cases, preconditions
    - **Data Integrity**: Type definitions, constraints, required fields
@@ -158,10 +160,11 @@ A dedicated slash command `/feishu-prd-analyse` is available for PRD analysis:
 
 **What happens when invoked:**
 1. Command extracts document ID from URL
-2. Uses feishu-analyst skill to fetch document content via Feishu MCP
-3. Automatically loads `prd_checklist.md` from `references/`
-4. Applies systematic analysis framework
-5. Returns structured review with:
+2. **Reads the COMPLETE document** - all text, tables, whiteboards, images, flowcharts, and diagrams
+3. Uses feishu-analyst skill to fetch document content via Feishu MCP
+4. Automatically loads `prd_checklist.md` from `references/`
+5. Applies systematic analysis framework
+6. Returns structured review with:
    - Executive summary
    - Critical findings (ambiguities, contradictions, data issues, gaps)
    - Questions for product team
