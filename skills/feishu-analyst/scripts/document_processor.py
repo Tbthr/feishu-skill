@@ -45,32 +45,32 @@ class DocumentProcessor:
     - Search within blocks without loading all into memory
     """
 
-    # Block type mapping (from Feishu documentation)
+    # Block type mapping (based on actual Feishu API responses)
     BLOCK_TYPES = {
-        0: "page",
-        1: "text",
-        2: "heading1",
-        3: "heading2",
-        4: "heading3",
-        5: "heading4",
-        6: "heading5",
-        7: "heading6",
-        8: "heading7",
-        9: "heading8",
-        10: "heading9",
-        11: "bullet",
-        12: "ordered",
-        13: "code",
-        14: "quote",
-        15: "todo",
-        16: "divider",
-        17: "image",
-        18: "table",
-        19: "callout",
-        20: "file",
-        21: "video",
-        22: "bookmark",
-        23: "unknown",
+        1: "page",
+        2: "text",
+        3: "heading1",
+        4: "heading2",
+        5: "heading3",
+        6: "heading4",
+        7: "heading5",
+        8: "heading6",
+        9: "heading7",
+        10: "heading8",
+        11: "heading9",
+        12: "bullet",         # bullet and ordered both use 'bullet' field
+        13: "ordered",
+        14: "code",
+        15: "quote",
+        16: "todo",
+        17: "divider",
+        18: "image",
+        19: "table",
+        # Additional types from documentation
+        20: "callout",
+        21: "file",
+        22: "video",
+        23: "bookmark",
         24: "view",
         25: "bitable",
         26: "mindnote",
@@ -78,22 +78,22 @@ class DocumentProcessor:
         28: "sheet",
         29: "folder",
         30: "wiki",
-        31: "board",
-        32: "calendar",
-        33: "group",
-        34: "chart",
-        35: "poll",
-        36: "form",
-        37: "flow",
-        38: "multi_person",
-        39: "bullet_sub",
-        40: "ordered_sub",
-        41: "todo_sub",
-        42: "quote_sub",
-        43: "whiteboard",
-        45: "chat",
-        46: "link_card",
-        47: "audio",
+        31: "table",          # Actual table block type in API responses
+        32: "table_cell",     # Table cell
+        33: "calendar",
+        34: "group",
+        35: "chart",
+        36: "poll",
+        37: "form",
+        38: "flow",
+        39: "multi_person",
+        40: "bullet_sub",
+        41: "ordered_sub",
+        42: "todo_sub",
+        43: "whiteboard",     # board/whiteboard
+        44: "chat",
+        45: "link_card",
+        46: "audio",
     }
 
     def __init__(self, cache_dir: str = "/tmp/feishu_mcp_cache"):
@@ -271,7 +271,8 @@ class DocumentProcessor:
         with open(filepath, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def iter_blocks(self, blocks: List, max_depth: int = 100) -> Iterator[BlockInfo]:
+    def iter_blocks(self, blocks: List, max_depth: int = 100,
+                    skip_table_cells: bool = False) -> Iterator[BlockInfo]:
         """
         Iterate through all blocks in a document tree.
 
@@ -280,6 +281,7 @@ class DocumentProcessor:
         Args:
             blocks: Block array from get_document_blocks (raw or normalized)
             max_depth: Maximum recursion depth
+            skip_table_cells: Whether to skip table_cell blocks (default False)
 
         Yields:
             BlockInfo for each block
@@ -299,6 +301,11 @@ class DocumentProcessor:
                 block_type = block.get("block_type", 0)
                 block_type_name = self.BLOCK_TYPES.get(block_type, f"unknown_{block_type}")
 
+                # Skip table cells if requested (they're part of table blocks)
+                if skip_table_cells and block_type == 32:
+                    # Don't yield this block, and also skip its children
+                    continue
+
                 # Extract text content
                 # Handle various text field formats
                 text = ""
@@ -315,6 +322,8 @@ class DocumentProcessor:
                             text = "".join(
                                 elem.get("text_run", {}).get("content", "")
                                 for elem in text_elements
+                                # Skip text with strikethrough style
+                                if not elem.get("text_run", {}).get("text_element_style", {}).get("strikethrough", False)
                             )
 
                 # Also check heading fields (heading1, heading2, etc.)
@@ -326,6 +335,8 @@ class DocumentProcessor:
                             heading_text = "".join(
                                 elem.get("text_run", {}).get("content", "")
                                 for elem in elements
+                                # Skip text with strikethrough style
+                                if not elem.get("text_run", {}).get("text_element_style", {}).get("strikethrough", False)
                             )
                             if heading_text and not text:
                                 text = heading_text
@@ -346,17 +357,26 @@ class DocumentProcessor:
                         bullet_text = "".join(
                             elem.get("text_run", {}).get("content", "")
                             for elem in bullet_elements
+                            # Skip text with strikethrough style
+                            if not elem.get("text_run", {}).get("text_element_style", {}).get("strikethrough", False)
                         )
                         text = bullet_text
 
                 # Get heading level if applicable
+                # heading1 (type=3) -> level=1, heading3 (type=5) -> level=3
                 level = None
-                if 2 <= block_type <= 10:
-                    level = block_type - 1  # heading1 -> level 1
+                if 3 <= block_type <= 11:
+                    level = block_type - 2  # heading1 -> level 1
 
                 # Count children
                 children = block.get("children", [])
                 children_count = len(children) if children else 0
+
+                # For table blocks, don't recursively process children when extract_tables=True
+                # because table content is extracted separately
+                should_recurse = True
+                if skip_table_cells and block_type == 31:
+                    should_recurse = False
 
                 yield BlockInfo(
                     block_id=block_id,
@@ -368,73 +388,192 @@ class DocumentProcessor:
                 )
 
                 # Recursively process children
-                if children:
+                if should_recurse and children:
                     yield from traverse(children, depth + 1)
 
         yield from traverse(normalized_blocks)
 
-    def to_markdown(self, blocks: List, max_depth: int = 100) -> str:
+    def to_markdown(self, blocks: List, max_depth: int = 100,
+                    extract_tables: bool = True,
+                    extract_whiteboards: bool = False) -> str:
         """
         Convert document blocks to Markdown format.
 
         Args:
             blocks: Block array from get_document_blocks
             max_depth: Maximum recursion depth
+            extract_tables: Whether to extract table content (default True)
+            extract_whiteboards: Whether to extract whiteboard content (default False)
 
         Returns:
             Markdown string
         """
         lines = []
+        normalized_blocks = self.normalize_blocks(blocks)
 
-        for block in self.iter_blocks(blocks, max_depth):
+        # Build a block lookup for table processing
+        block_map = {b.get("block_id"): b for b in normalized_blocks if isinstance(b, dict)}
+
+        # Track ordered list counters
+        ordered_counter = 0
+
+        # Skip table cells to avoid duplicate content when extract_tables=True
+        skip_cells = extract_tables
+
+        for block in self.iter_blocks(blocks, max_depth, skip_table_cells=skip_cells):
             text = block.text
 
-            if block.block_type == 1:  # text
+            if block.block_type == 1:  # page - skip
+                continue
+
+            elif block.block_type == 2:  # text
                 if text:
                     lines.append(text)
                     lines.append("")  # Blank line after paragraph
 
-            elif 2 <= block.block_type <= 10:  # headings
+            elif 3 <= block.block_type <= 11:  # headings (heading1-heading9)
                 level = block.level
                 prefix = "#" * level
                 lines.append(f"{prefix} {text}")
                 lines.append("")
+                # Reset ordered counter after headings
+                ordered_counter = 0
 
-            elif block.block_type in (11, 39):  # bullet, bullet_sub
+            elif block.block_type == 12:  # bullet
                 lines.append(f"- {text}")
+                ordered_counter = 0  # Reset on bullet
 
-            elif block.block_type in (12, 40):  # ordered, ordered_sub
-                lines.append(f"1. {text}")
+            elif block.block_type == 13:  # ordered
+                ordered_counter += 1
+                lines.append(f"{ordered_counter}. {text}")
 
-            elif block.block_type == 13:  # code
+            elif block.block_type == 14:  # code
                 lines.append("```")
                 lines.append(text)
                 lines.append("```")
                 lines.append("")
 
-            elif block.block_type == 14:  # quote
+            elif block.block_type == 15:  # quote
                 lines.append(f"> {text}")
                 lines.append("")
 
-            elif block.block_type == 15:  # todo
+            elif block.block_type == 16:  # todo
                 lines.append(f"- [ ] {text}")
 
-            elif block.block_type == 16:  # divider
+            elif block.block_type == 17:  # divider
                 lines.append("---")
                 lines.append("")
 
-            elif block.block_type == 17:  # image
+            elif block.block_type == 18:  # image
                 if text:
                     lines.append(f"[Image: {text}]")
                 else:
                     lines.append("[Image]")
                 lines.append("")
 
-            elif block.block_type == 18:  # table
-                lines.append(f"[Table with {block.children_count} cells]")
+            elif block.block_type == 19:  # callout
+                lines.append(f"> {text}")
+                lines.append("")
+
+            elif block.block_type == 31:  # table
+                if extract_tables:
+                    table_md = self._extract_table_markdown(block.block_id, normalized_blocks, block_map)
+                    lines.append(table_md)
+                else:
+                    lines.append(f"[Table with {block.children_count} cells]")
+                lines.append("")
+
+            elif block.block_type == 43:  # whiteboard
+                if extract_whiteboards:
+                    block_data = block_map.get(block.block_id, {})
+                    board_token = block_data.get("board", {}).get("token", "")
+                    if board_token:
+                        lines.append(f"[Whiteboard: {board_token}]")
+                    else:
+                        lines.append("[Whiteboard]")
+                else:
+                    lines.append(f"[Whiteboard/画板]")
                 lines.append("")
 
         return "\n".join(lines)
+
+    def _extract_table_markdown(self, table_block_id: str, blocks: List, block_map: Dict) -> str:
+        """
+        Extract table content as markdown table.
+
+        Args:
+            table_block_id: The block_id of the table block
+            blocks: All blocks in the document
+            block_map: Mapping of block_id to block data
+
+        Returns:
+            Markdown table string
+        """
+        table_block = block_map.get(table_block_id, {})
+        table_data = table_block.get("table", {})
+
+        if not table_data:
+            return f"[Table: unable to extract content]"
+
+        # Get table dimensions
+        property_data = table_data.get("property", {})
+        row_size = property_data.get("row_size", 0)
+        column_size = property_data.get("column_size", 0)
+
+        if row_size == 0 or column_size == 0:
+            return f"[Table: empty table]"
+
+        # Get cell block IDs
+        cell_ids = table_data.get("cells", [])
+
+        # Extract cell content
+        cell_contents = []
+        for cell_id in cell_ids:
+            cell_text = ""
+            # Find the cell block and extract its text
+            if cell_id in block_map:
+                cell_block = block_map[cell_id]
+                # Cell content is in children
+                children = cell_block.get("children", [])
+                if children and children[0] in block_map:
+                    child_block = block_map[children[0]]
+                    # Extract text from child block
+                    for field in ["text", "heading1", "heading2", "heading3", "heading4", "heading5",
+                                  "heading6", "heading7", "heading8", "heading9", "bullet"]:
+                        if field in child_block and isinstance(child_block[field], dict):
+                            field_data = child_block[field]
+                            elements = field_data.get("elements", [])
+                            cell_text = "".join(
+                                elem.get("text_run", {}).get("content", "")
+                                for elem in elements
+                                # Skip text with strikethrough style
+                                if not elem.get("text_run", {}).get("text_element_style", {}).get("strikethrough", False)
+                            )
+                            if cell_text:
+                                break
+            cell_contents.append(cell_text.strip() if cell_text.strip() else "")
+
+        # Build markdown table
+        md_lines = []
+
+        # Build rows
+        for row in range(row_size):
+            row_cells = []
+            for col in range(column_size):
+                idx = row * column_size + col
+                if idx < len(cell_contents):
+                    cell_text = cell_contents[idx].replace("|", "\\|")  # Escape pipes
+                    row_cells.append(cell_text)
+                else:
+                    row_cells.append("")
+            md_lines.append("| " + " | ".join(row_cells) + " |")
+
+            # Add separator after first row (header)
+            if row == 0:
+                separator = "| " + " | ".join(["---"] * column_size) + " |"
+                md_lines.append(separator)
+
+        return "\n".join(md_lines)
 
     def extract_text(self, blocks: List, max_depth: int = 100) -> str:
         """
@@ -503,7 +642,7 @@ class DocumentProcessor:
         """
         lines = []
         for block in self.iter_blocks(blocks):
-            if 2 <= block.block_type <= 10:  # Is heading
+            if 3 <= block.block_type <= 11:  # Is heading (heading1-heading9)
                 indent = "  " * (block.level - 1)
                 lines.append(f"{indent}{block.level}. {block.text}")
 
