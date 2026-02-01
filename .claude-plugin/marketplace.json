@@ -1,37 +1,18 @@
 {
-  "displayName": "Feishu Skills",
-  "description": "飞书/Lark 文档智能分析技能集 - 支持 Wiki、文档、表格，自动转换为 Markdown，节省 96-99% 的 token",
-  "icon": "feishu.png",
-  "author": "feishu-skill",
-  "owner": "feishu-skill",
-  "license": "MIT",
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "feishu-skills",
   "version": "1.0.0",
-  "homepage": "https://github.com/Tbthr/feishu-skill",
-  "repository": "https://github.com/Tbthr/feishu-skill",
-  "mcp": "https://github.com/cso1z/Feishu-MCP",
-  "keywords": [
-    "feishu",
-    "lark",
-    "文档分析",
-    "文档处理",
-    "markdown",
-    "表格",
-    "wiki",
-    "mcp"
-  ],
-  "categories": [
-    "文档处理",
-    "生产力"
-  ],
+  "description": "飞书/Lark 文档智能分析技能集 - 支持 Wiki、文档、表格，自动转换为 Markdown",
+  "owner": {
+    "name": "feishu-skill",
+    "email": ""
+  },
   "plugins": [
     {
       "name": "feishu-skills",
-      "displayName": "Feishu Skills",
       "description": "飞书文档智能分析 - 支持 Wiki、文档、表格处理",
       "source": "./",
-      "skills": [
-        "./skills/feishu-analyst"
-      ]
+      "category": "productivity"
     }
   ]
 }
