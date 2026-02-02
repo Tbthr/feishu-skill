@@ -46,7 +46,33 @@ bash setup.sh install
 2. 创建自建应用（或使用现有应用）
 3. 进入「凭证与基础信息」页面
 4. 复制 **App ID** 和 **App Secret**
-5. 添加权限：`docx:document`、`docx:document:readonly`
+5. 添加以下权限：
+
+```
+docx:document:block:convert
+base:app:read
+bitable:app
+bitable:app:readonly
+board:whiteboard:node:create
+board:whiteboard:node:read
+contact:user.employee_id:readonly
+docs:document.content:read
+docx:document
+docx:document:create
+docx:document:readonly
+drive:drive
+drive:drive:readonly
+drive:file
+drive:file:upload
+sheets:spreadsheet
+sheets:spreadsheet:readonly
+space:document:retrieve
+space:folder:create
+wiki:space:read
+wiki:space:retrieve
+wiki:wiki
+wiki:wiki:readonly
+```
 
 ### 3. 重启并使用
 
@@ -203,10 +229,33 @@ bash skills/feishu-analyst/scripts/setup.sh check
 
 ### 权限错误
 
-确保飞书应用有以下权限：
-- `docx:document` - 读取文档内容
-- `docx:document:readonly` - 只读访问
-- `wiki:wiki:readonly` - Wiki 只读访问（如需）
+确保飞书应用有以下权限（底层 MCP 完整依赖）：
+
+```
+docx:document:block:convert
+base:app:read
+bitable:app
+bitable:app:readonly
+board:whiteboard:node:create
+board:whiteboard:node:read
+contact:user.employee_id:readonly
+docs:document.content:read
+docx:document
+docx:document:create
+docx:document:readonly
+drive:drive
+drive:drive:readonly
+drive:file
+drive:file:upload
+sheets:spreadsheet
+sheets:spreadsheet:readonly
+space:document:retrieve
+space:folder:create
+wiki:space:read
+wiki:space:retrieve
+wiki:wiki
+wiki:wiki:readonly
+```
 
 ### 认证失败
 
