@@ -29,11 +29,8 @@
 ### 1. 配置飞书凭证
 
 ```bash
-# 进入已安装的 skill 目录
-cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
-
 # 运行配置脚本
-python setup_feishu.py
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/setup_feishu.py"
 ```
 
 按提示输入你的飞书 **App ID** 和 **App Secret**。
@@ -91,11 +88,8 @@ wiki:wiki:readonly
 ### 手动分析文档
 
 ```bash
-# 进入 scripts 目录
-cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
-
 # 获取文档并保存到临时文件（推荐）
-python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxxxx"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxxxx"
 
 # 输出：
 # {
@@ -106,9 +100,9 @@ python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxxxx"
 # }
 
 # 处理已保存的文档
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format outline
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
 ```
 
 ## 实现原理

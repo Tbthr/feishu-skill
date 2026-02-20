@@ -624,10 +624,12 @@ class DocumentProcessor:
 
                 # Check code blocks
                 if "code" in block and isinstance(block["code"], dict):
-                    code_text = block["code"].get("code", "")
-                    if code_text and not text:
-                        text = code_text
-                        inline_text = code_text
+                    code_data = block["code"]
+                    plain, styled = extract_from_data(code_data, for_inline=True)
+                    if plain and not text:
+                        text = plain
+                    if styled and not inline_text:
+                        inline_text = styled
 
                 # Check list items (bullet, ordered, todo)
                 # List items use "bullet" field with elements

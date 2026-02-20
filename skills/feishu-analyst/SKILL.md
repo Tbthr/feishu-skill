@@ -57,23 +57,14 @@ This command will automatically:
 
 ### Manual Analysis
 
-#### 1. 获取 Skill 基础路径
-
-Skill 加载时会显示基础路径：
-```
-Base directory for this skill: /Users/xxx/.claude/plugins/cache/.../skills/feishu-analyst
-```
-
-#### 2. 推荐方式：使用 --fetch 保存到临时文件
+#### 1. 推荐方式：使用 --fetch 保存到临时文件
 
 > ⚠️ **重要**：使用 `--fetch` 将文档保存到临时文件，**避免文档内容注入 context**。
 > 临时文件命名格式：`document_{document_id}_blocks.json` 和 `document_{document_id}.md`
 
 ```bash
-cd $SKILL_DIR/scripts
-
 # 获取文档并保存到 /tmp（默认）
-python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxx"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
 
 # 输出示例：
 # {
@@ -84,23 +75,23 @@ python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxx"
 # }
 
 # 指定输出目录
-python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxx" --output-dir ./output
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx" --output-dir ./output
 ```
 
-#### 3. 处理已保存的文档文件
+#### 2. 处理已保存的文档文件
 
 ```bash
 # 转换为 Markdown（输出到 stdout）
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
 
 # 获取文档大纲
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format outline
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
 
 # 获取文档摘要
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
 
 # 保存到文件
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown --output result.md
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown --output result.md
 ```
 
 **支持的格式**：
@@ -108,25 +99,25 @@ python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown -
 - `--format outline` - 提取文档大纲
 - `--format summary` - 输出文档摘要（JSON）
 
-#### 4. 底层工具调用（可选）
+#### 3. 底层工具调用（可选）
 
 ```bash
 # 列出所有工具
-python mcp_client.py --list
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --list
 
 # 获取工具描述
-python mcp_client.py --describe get_feishu_document_blocks
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --describe get_feishu_document_blocks
 
 # 直接调用工具（注意：响应可能很大）
-python mcp_client.py --call get_feishu_document_info \
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --call get_feishu_document_info \
   --args '{"documentId": "https://xxx.feishu.cn/wiki/xxx", "documentType": "wiki"}'
 ```
 
-#### 5. Python API
+#### 4. Python API
 
 ```python
 import sys
-sys.path.insert(0, f"{SKILL_BASE}/scripts")
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
 
 from mcp_client import fetch_document, process_document
 
@@ -227,7 +218,7 @@ When invoked, the command will:
 
 ```python
 import sys
-sys.path.insert(0, f"{SKILL_BASE}/scripts")
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
 
 from mcp_client import call_feishu_tool
 from document_processor import DocumentProcessor
@@ -243,7 +234,7 @@ markdown = processor.to_markdown(blocks)
 ### For Data Querying (tables, schedules, lists)
 ```python
 import sys
-sys.path.insert(0, f"{SKILL_BASE}/scripts")
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
 
 from mcp_client import call_feishu_tool
 from table_processor import TableProcessor
@@ -306,4 +297,3 @@ A dedicated slash command `/feishu-prd-analyse` is available for PRD analysis:
 ## Reference Documentation
 
 - [prd_checklist.md](references/prd_checklist.md) - PRD analysis checklist
-- [mcp_utils.md](references/mcp_utils.md) - Complete mcp_utils API guide

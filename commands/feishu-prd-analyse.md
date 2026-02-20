@@ -1,5 +1,6 @@
 ---
 description: "Analyze Feishu PRD documents using the feishu-analyst skill with auto-loaded PRD checklist framework"
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py:*)"]
 ---
 
 You are analyzing a Product Requirements Document (PRD) from Feishu. Follow these steps:
@@ -11,10 +12,7 @@ You are analyzing a Product Requirements Document (PRD) from Feishu. Follow thes
 > ⚠️ **重要**：使用 `--fetch` 将文档保存到临时文件，**避免文档内容注入 context**。
 
 ```bash
-cd $SKILL_DIR/scripts
-
-# 获取文档并保存到 /tmp
-python mcp_client.py --fetch "<FEISHU_URL>"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "<FEISHU_URL>"
 
 # 输出示例：
 # {
@@ -29,13 +27,13 @@ python mcp_client.py --fetch "<FEISHU_URL>"
 
 ```bash
 # 转换为 Markdown
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
 
 # 获取文档大纲
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format outline
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
 
 # 获取文档摘要
-python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
 ```
 
 ### 3. 应用 PRD 分析框架
