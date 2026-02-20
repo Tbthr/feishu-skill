@@ -6,53 +6,39 @@ You are analyzing a Product Requirements Document (PRD) from Feishu. Follow thes
 
 ## 执行步骤
 
-### 1. 提取文档 ID
+### 1. 获取文档（推荐：使用 --fetch 保存到临时文件）
 
-**Document** (`/docx/DOC_ID`): Use `DOC_ID` directly
-**Wiki** (`/wiki/NODE_TOKEN`): Use `get_feishu_document_info(documentType="wiki")` and extract `obj_token`
-
-### 2. 获取文档信息（零上下文）
+> ⚠️ **重要**：使用 `--fetch` 将文档保存到临时文件，**避免文档内容注入 context**。
 
 ```bash
 cd $SKILL_DIR/scripts
-python executor.py --call '{"tool": "get_feishu_document_info", "arguments": {"documentId": "<URL>", "documentType": "wiki"}}'
+
+# 获取文档并保存到 /tmp
+python mcp_client.py --fetch "<FEISHU_URL>"
+
+# 输出示例：
+# {
+#   "document_id": "G85TdPCcTo91CYx4aYzcLKCnnFe",
+#   "title": "文档标题",
+#   "blocks_file": "/tmp/document_G85TdPCcTo91CYx4aYzcLKCnnFe_blocks.json",
+#   "markdown_file": "/tmp/document_G85TdPCcTo91CYx4aYzcLKCnnFe.md"
+# }
 ```
 
-或使用 Python：
-```python
-import sys
-sys.path.insert(0, f"{SKILL_BASE}/scripts")
-from mcp_client import call_feishu_tool
-
-doc_info = call_feishu_tool("get_feishu_document_info", {
-    "documentId": "<URL>",
-    "documentType": "wiki"
-})
-doc_id = doc_info.get("obj_token") or doc_info.get("documentId")
-```
-
-### 3. 获取文档块（零上下文）
+### 2. 处理文档
 
 ```bash
-python executor.py --call '{"tool": "get_feishu_document_blocks", "arguments": {"documentId": "<obj_token>"}}' > /tmp/blocks.json
+# 转换为 Markdown
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown
+
+# 获取文档大纲
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format outline
+
+# 获取文档摘要
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
 ```
 
-### 4. 处理文档
-
-```python
-import json
-import sys
-sys.path.insert(0, f"{SKILL_BASE}/scripts")
-from document_processor import DocumentProcessor
-
-with open('/tmp/blocks.json') as f:
-    blocks = json.load(f)
-
-processor = DocumentProcessor()
-markdown = processor.to_markdown(blocks)
-```
-
-### 5. 应用 PRD 分析框架
+### 3. 应用 PRD 分析框架
 
 Load the PRD checklist from `skills/feishu-analyst/references/prd_checklist.md`
 
@@ -73,7 +59,7 @@ Apply the systematic analysis framework across 4 dimensions:
   - All embedded content
 - Ensure no blocks are skipped or truncated
 - Verify the document has been fully read before proceeding with analysis
-- **ALWAYS save large responses (>10KB) to file before processing**
+- **ALWAYS use --fetch to save document to file, avoid loading content into context**
 
 ## 输出格式
 

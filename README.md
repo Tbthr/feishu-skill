@@ -3,16 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Skill-blue)](https://github.com/anthropics/anthropic-agent-skills)
 
-> 飞书文档智能分析 skill - 通过 Feishu MCP 实现高效的文档交互
+> 飞书文档智能分析 skill - 零上下文 MCP 调用，高效分析飞书文档
 
 ## 特性
 
-- **极简配置** - 一键安装，自动配置 MCP 服务器
+- **零上下文调用** - MCP 工具调用不注入 context，节省大量 tokens
+- **极简配置** - 一键配置飞书凭证
 - **PRD 智能分析** - 专用 `/feishu-prd-analyse` 命令，系统化评审产品需求文档
 - **类型完整** - 支持文档、Wiki、表格、白板等所有飞书内容类型
 - **Markdown 转换** - 自动转换为结构化 Markdown，便于分析
-- **表格数据提取** - 专门处理表格数据，支持结构化查询
-- **文档搜索** - 支持关键词搜索飞书文档库
+- **临时文件处理** - 大文档自动保存到临时文件，避免 context 溢出
 
 ## 安装方式
 
@@ -26,16 +26,14 @@
 
 ## 快速开始
 
-### 1. 配置飞书 MCP
-
-通过 `/plugin` 安装后，需要配置飞书凭据：
+### 1. 配置飞书凭证
 
 ```bash
 # 进入已安装的 skill 目录
 cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
 
 # 运行配置脚本
-bash setup.sh install
+python setup-feishu.py
 ```
 
 按提示输入你的飞书 **App ID** 和 **App Secret**。
@@ -74,12 +72,10 @@ wiki:wiki
 wiki:wiki:readonly
 ```
 
-### 3. 重启并使用
-
-配置完成后，**重启 Claude Code**，然后：
+### 3. 使用
 
 ```
-使用 feishu-analyst skill 分析文档：https://xxx.feishu.cn/wiki/...
+/feishu-prd-analyse https://xxx.feishu.cn/wiki/xxxxx
 ```
 
 ## 使用示例
@@ -92,46 +88,32 @@ wiki:wiki:readonly
 /feishu-prd-analyse https://xxx.feishu.cn/docx/xxxxx
 ```
 
-该命令会自动：
-1. **完整读取文档所有内容**（文字、表格、画板、图片、流程图等）
-2. 提取文档内容并转换为 Markdown
-3. 应用系统化的 PRD 分析框架（4 个维度）
-4. 生成结构化评审报告，包括：
-   - 歧义检查（模糊术语、指标、时间线）
-   - 逻辑一致性（矛盾、边界情况）
-   - 数据完整性（类型定义、约束）
-   - 完整性评估（用户故事、验收标准）
-   - 改进建议和整体评估
+### 手动分析文档
 
-**适用于产品需求文档（PRD）的快速评审和质量分析。**
+```bash
+# 进入 scripts 目录
+cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
 
-### 分析 Wiki 文档
+# 获取文档并保存到临时文件（推荐）
+python mcp_client.py --fetch "https://xxx.feishu.cn/wiki/xxxxx"
 
-```
-请帮我分析这个飞书 Wiki 中的 PRD 文档：
-https://xxx.feishu.cn/wiki/xxxxx
+# 输出：
+# {
+#   "document_id": "G85TdPCcTo91CYx4aYzcLKCnnFe",
+#   "title": "文档标题",
+#   "blocks_file": "/tmp/document_G85TdPCcTo91CYx4aYzcLKCnnFe_blocks.json",
+#   "markdown_file": "/tmp/document_G85TdPCcTo91CYx4aYzcLKCnnFe.md"
+# }
 
-提取核心需求、功能列表和技术要点。
-```
-
-### 提取表格数据
-
-```
-从这个飞书文档中提取所有表格数据：
-https://xxx.feishu.cn/docx/xxxxx
-
-按产品分类汇总数据。
-```
-
-### 搜索文档
-
-```
-在飞书中搜索包含 "AI Agent" 的文档。
+# 处理已保存的文档
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format markdown
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format outline
+python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
 ```
 
 ## 实现原理
 
-### 架构设计
+### 零上下文架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -139,47 +121,42 @@ https://xxx.feishu.cn/docx/xxxxx
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌───────────────┐      ┌──────────────────────────────┐  │
-│  │ feishu-analyst│─────▶│  Feishu MCP Server           │  │
-│  │    Skill      │      │  (cso1z/Feishu-MCP)          │  │
-│  │               │◀─────│   https://github.com/cso1z/  │  │
+│  │ feishu-analyst│─────▶│  mcp_client.py               │  │
+│  │    Skill      │      │  --fetch / --process         │  │
+│  │               │      │                              │  │
+│  │               │      │  ┌────────────────────────┐  │  │
+│  │               │      │  │ executor.py            │  │  │
+│  │               │      │  │ (启动 MCP Server)      │  │  │
+│  │               │      │  └────────────────────────┘  │  │
 │  └───────────────┘      └──────────────────────────────┘  │
 │         │                         │                        │
-│         │                         ▼                        │
-│  ┌──────▼─────────────────────────────────────┐            │
-│  │  Processing Scripts (Python)                │            │
-│  │  ├── document_processor.py  → Markdown 转换 │            │
-│  │  ├── table_processor.py     → 表格提取     │            │
-│  │  ├── search_processor.py    → 搜索格式化   │            │
-│  │  ├── creation_processor.py  → 创建响应     │            │
-│  │  └── validator.py           → 响应验证     │            │
-│  └─────────────────────────────────────────────┘            │
+│         │ 临时文件（不注入 context）                       │
+│         ▼                         ▼                        │
+│  ┌─────────────────────────────────────────────┐          │
+│  │  /tmp/document_{id}_blocks.json             │          │
+│  │  /tmp/document_{id}.md                      │          │
+│  └─────────────────────────────────────────────┘          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
                     ┌─────────────────┐
-                    │  Feishu API     │
-                    │  open.feishu.cn │
+                    │  Feishu MCP     │
+                    │  (npx feishu-mcp│
+                    │   --stdio)      │
                     └─────────────────┘
 ```
 
-### 工作流程
-
-1. **文档获取** - 通过 Feishu MCP 获取原始文档块
-2. **文件暂存** - 大文档保存到本地文件进行处理
-3. **智能处理** - 根据内容类型选择合适的处理器
-4. **结果返回** - 返回结构化结果（Markdown、表格数据等）
-
 ### 核心脚本说明
 
-| 脚本 | 功能 |
-|------|------|
-| `validator.py` | 验证 MCP 响应，提取错误信息 |
-| `document_processor.py` | 文档处理、Markdown 转换、大纲生成 |
-| `search_processor.py` | 搜索结果格式化 |
-| `table_processor.py` | 表格数据提取和结构化 |
-| `creation_processor.py` | 文档创建响应解析 |
-| `logger.py` | MCP 调用日志记录 |
+| 脚本 | 功能 | CLI |
+|------|------|-----|
+| `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch` / `--process` / `--call` |
+| `executor.py` | 底层 MCP 执行器（零上下文） | `--list` / `--call` |
+| `setup-feishu.py` | 交互式凭证配置 | 直接运行 |
+| `document_processor.py` | 文档处理、Markdown 转换 | Python import |
+| `validator.py` | 响应验证、错误提取 | Python import |
+| `table_processor.py` | 表格数据提取 | Python import |
 
 ### Slash Commands
 
@@ -191,78 +168,41 @@ https://xxx.feishu.cn/docx/xxxxx
 
 ```
 feishu-skill/
-├── LICENSE                            # MIT 许可证
-├── README.md                          # 项目说明（本文件）
-├── .gitignore                         # Git 忽略配置
-├── requirements.txt                   # Python 依赖
-├── CHANGELOG.md                       # 更新日志
-├── CONTRIBUTING.md                    # 贡献指南
-├── .claude-plugin/
-│   └── marketplace.json               # Marketplace 配置
-├── .claude/
-│   └── commands/                      # Slash Commands
-│       └── feishu-prd-analyse.md      # PRD 分析命令
-└── skills/                            # Skills 目录
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── commands/
+│   └── feishu-prd-analyse.md      # PRD 分析命令
+└── skills/
     └── feishu-analyst/
-        ├── SKILL.md                   # Skill 定义文件
-        ├── scripts/                   # 处理脚本
-        │   ├── setup.sh               # MCP 配置脚本
-        │   ├── validator.py           # 响应验证
-        │   ├── document_processor.py  # 文档处理
-        │   ├── search_processor.py    # 搜索处理
-        │   ├── table_processor.py     # 表格处理
-        │   ├── creation_processor.py  # 创建处理
-        │   └── logger.py              # 日志记录
-        └── references/                # 参考文档
-            ├── prd_checklist.md       # PRD 分析清单
-            └── mcp_utils.md           # 完整 API 指南
+        ├── SKILL.md               # Skill 定义文件
+        ├── scripts/
+        │   ├── mcp_client.py      # 统一 CLI 入口 ⭐
+        │   ├── executor.py        # 零上下文 MCP 执行器 ⭐
+        │   ├── setup-feishu.py    # 凭证配置脚本 ⭐
+        │   ├── document_processor.py
+        │   ├── table_processor.py
+        │   ├── search_processor.py
+        │   ├── creation_processor.py
+        │   ├── validator.py
+        │   └── logger.py
+        └── references/
+            └── prd_checklist.md   # PRD 分析清单
 ```
 
 ## 故障排查
 
-### MCP 未加载
+### 凭证未配置
 
 ```bash
-# 检查 MCP 配置状态
-bash skills/feishu-analyst/scripts/setup.sh check
+python skills/feishu-analyst/scripts/setup-feishu.py
 ```
 
 ### 权限错误
 
-确保飞书应用有以下权限（底层 MCP 完整依赖）：
-
-```
-docx:document:block:convert
-base:app:read
-bitable:app
-bitable:app:readonly
-board:whiteboard:node:create
-board:whiteboard:node:read
-contact:user.employee_id:readonly
-docs:document.content:read
-docx:document
-docx:document:create
-docx:document:readonly
-drive:drive
-drive:drive:readonly
-drive:file
-drive:file:upload
-sheets:spreadsheet
-sheets:spreadsheet:readonly
-space:document:retrieve
-space:folder:create
-wiki:space:read
-wiki:space:retrieve
-wiki:wiki
-wiki:wiki:readonly
-```
-
-### 认证失败
-
-```bash
-# 重新配置凭据
-bash skills/feishu-analyst/scripts/setup.sh install
-```
+确保飞书应用有完整的 MCP 依赖权限（见上方权限列表）。
 
 ## 相关资源
 
@@ -273,7 +213,3 @@ bash skills/feishu-analyst/scripts/setup.sh install
 ## 许可证
 
 本项目采用 [MIT License](LICENSE) 开源协议。
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！详见 [CONTRIBUTING.md](CONTRIBUTING.md)。

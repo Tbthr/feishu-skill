@@ -76,7 +76,7 @@ pytest tests/
 
 ### 添加新的处理器
 
-在 `.claude/skills/feishu-analyst/scripts/` 下创建新的处理器脚本：
+在 `skills/feishu-analyst/scripts/` 下创建新的处理器脚本：
 
 ```python
 # your_processor.py
