@@ -16,7 +16,7 @@
 
 ### 新增
 - **零上下文 MCP 调用** - 通过 Python 启动 MCP Client 调用服务，响应不注入 context
-- **用户凭证配置** - `setup-feishu.py` 交互式配置脚本，支持环境变量覆盖
+- **用户凭证配置** - `setup_feishu.py` 交互式配置脚本，支持环境变量覆盖
 - **统一 CLI 入口** - `mcp_client.py --fetch` 获取文档并保存到临时文件
 - **临时文件命名** - 使用 `document_{id}_blocks.json` 格式，便于管理
 

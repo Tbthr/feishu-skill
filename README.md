@@ -33,7 +33,7 @@
 cd ~/.claude/plugins/feishu-skills/skills/feishu-analyst/scripts
 
 # 运行配置脚本
-python setup-feishu.py
+python setup_feishu.py
 ```
 
 按提示输入你的飞书 **App ID** 和 **App Secret**。
@@ -153,7 +153,7 @@ python mcp_client.py --process /tmp/document_xxx_blocks.json --format summary
 |------|------|-----|
 | `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch` / `--process` / `--call` |
 | `executor.py` | 底层 MCP 执行器（零上下文） | `--list` / `--call` |
-| `setup-feishu.py` | 交互式凭证配置 | 直接运行 |
+| `setup_feishu.py` | 交互式凭证配置 | 直接运行 |
 | `document_processor.py` | 文档处理、Markdown 转换 | Python import |
 | `validator.py` | 响应验证、错误提取 | Python import |
 | `table_processor.py` | 表格数据提取 | Python import |
@@ -181,7 +181,7 @@ feishu-skill/
         ├── scripts/
         │   ├── mcp_client.py      # 统一 CLI 入口 ⭐
         │   ├── executor.py        # 零上下文 MCP 执行器 ⭐
-        │   ├── setup-feishu.py    # 凭证配置脚本 ⭐
+        │   ├── setup_feishu.py    # 凭证配置脚本 ⭐
         │   ├── document_processor.py
         │   ├── table_processor.py
         │   ├── search_processor.py
@@ -197,7 +197,7 @@ feishu-skill/
 ### 凭证未配置
 
 ```bash
-python skills/feishu-analyst/scripts/setup-feishu.py
+python skills/feishu-analyst/scripts/setup_feishu.py
 ```
 
 ### 权限错误
@@ -208,6 +208,7 @@ python skills/feishu-analyst/scripts/setup-feishu.py
 
 - [Feishu MCP Server](https://github.com/cso1z/Feishu-MCP)
 - [Claude Agent Skills](https://github.com/anthropics/anthropic-agent-skills)
+- [MCP to Skill Converter](https://github.com/GBSOSS/-mcp-to-skill-converter)
 - [飞书开放平台](https://open.feishu.cn/)
 
 ## 许可证

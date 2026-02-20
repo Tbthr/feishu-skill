@@ -40,7 +40,7 @@ class FeishuMCPClient:
         if not self.executor_path.exists():
             raise FileNotFoundError(f"executor.py not found: {self.executor_path}")
 
-        # 注意：凭证配置通过环境变量或 setup-feishu.py 设置
+        # 注意：凭证配置通过环境变量或 setup_feishu.py 设置
 
     def list_tools(self) -> List[Dict]:
         """列出所有可用工具"""

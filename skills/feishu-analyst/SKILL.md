@@ -24,7 +24,7 @@ Analyze Feishu documents efficiently with **zero-context MCP calling**.
 
 **方式一：运行配置脚本（推荐）**
 ```bash
-python scripts/setup-feishu.py
+python scripts/setup_feishu.py
 ```
 
 **方式二：设置环境变量**
@@ -182,7 +182,7 @@ Located in `scripts/`:
 |--------|---------|-----------|
 | `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `python mcp_client.py --fetch URL` / `--process FILE` / `--call TOOL` |
 | `executor.py` | 底层 MCP 执行器 | `python executor.py --list` / `--call` |
-| `setup-feishu.py` | 交互式凭证配置 | `python setup-feishu.py` |
+| `setup_feishu.py` | 交互式凭证配置 | `python setup_feishu.py` |
 | `document_processor.py` | 文档处理（Markdown/大纲/摘要） | Python import only |
 | `validator.py` | 响应验证、错误提取 | Python import only |
 | `table_processor.py` | 表格数据提取 | Python import only |
@@ -258,7 +258,7 @@ tables = processor.extract_tables(blocks)
 
 ## Error Handling
 
-- **Credentials not configured**: Run `python scripts/setup-feishu.py` or set environment variables
+- **Credentials not configured**: Run `python scripts/setup_feishu.py` or set environment variables
 - **mcp package not installed**: `pip install mcp`
 - **Permission Denied**: Check document access or bot visibility
 - **API Errors**: Verify credentials in `~/.feishu-mcp/config.json`

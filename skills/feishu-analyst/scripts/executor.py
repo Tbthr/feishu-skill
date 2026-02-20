@@ -69,7 +69,7 @@ def load_config():
         print("Please configure using one of these methods:", file=sys.stderr)
         print("", file=sys.stderr)
         print("  Method 1 - Run setup script:", file=sys.stderr)
-        print("    python scripts/setup-feishu.py", file=sys.stderr)
+        print("    python scripts/setup_feishu.py", file=sys.stderr)
         print("", file=sys.stderr)
         print("  Method 2 - Set environment variables:", file=sys.stderr)
         print("    export FEISHU_APP_ID='your-app-id'", file=sys.stderr)
