@@ -12,6 +12,32 @@
 - 支持飞书表单数据提取
 - 添加更多文档格式导出选项
 
+## [1.2.0] - 2026-02-21
+
+### 新增
+- **`cli.py`** - CLI 入口，支持 `save/outline/list/describe/call` 子命令
+- **`client.py`** - `FeishuMCPClient` 核心客户端类
+- **`document.py`** - `save_document()` 和 `get_outline()` 高级操作
+- **`__init__.py`** - 导出公共 API
+
+### 变更
+- 文件重命名：`document_processor.py` → `processor.py`，`table_processor.py` → `table.py`，`setup_feishu.py` → `setup.py`
+- CLI 命令变更：`mcp_client.py --fetch` → `cli.py save`，`mcp_client.py --process` → `cli.py outline`
+- 表格处理逻辑整合到 `processor.py`
+
+### 移除
+- `mcp_client.py` - 被 `cli.py` + `client.py` + `document.py` 替代
+- `creation.py` - 创建响应解析器（未使用）
+- `logger.py` - MCP 调用日志（未使用）
+- `search.py` - 搜索结果处理器（未使用）
+- `table.py` - 表格处理器（与 processor.py 重复）
+- `validator.py` - 响应验证器（未使用）
+- `setup.sh` - 交互式配置脚本（未使用）
+
+### 改进
+- 清理 1495 行死代码
+- 统一 API 入口，更清晰的模块职责划分
+
 ## [1.1.0] - 2026-02-20
 
 ### 新增
@@ -48,6 +74,7 @@
 - SKILL.md 定义文件
 - 故障排查指南
 
-[Unreleased]: https://github.com/Tbthr/feishu-skill/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Tbthr/feishu-skill/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Tbthr/feishu-skill/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Tbthr/feishu-skill/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Tbthr/feishu-skill/releases/tag/v1.0.0
