@@ -24,7 +24,7 @@ Analyze Feishu documents efficiently with **zero-context MCP calling**.
 
 **方式一：运行配置脚本（推荐）**
 ```bash
-python scripts/setup_feishu.py
+python scripts/setup.py
 ```
 
 **方式二：设置环境变量**
@@ -57,14 +57,19 @@ This command will automatically:
 
 ### Manual Analysis
 
-#### 1. 推荐方式：使用 --fetch 保存到临时文件
+#### 入口选择指南
 
-> ⚠️ **重要**：使用 `--fetch` 将文档保存到临时文件，**避免文档内容注入 context**。
-> 临时文件命名格式：`document_{document_id}_blocks.json` 和 `document_{document_id}.md`
+| 场景 | 入口 | 说明 |
+|------|------|------|
+| 固定流程（PRD 分析） | `/feishu-prd-analyse` | 稳定、可预测 |
+| 动态需求 | Python API | 灵活、可组合 |
+| 命令行操作 | CLI | 直接调用 |
+
+#### 1. CLI 命令
 
 ```bash
-# 获取文档并保存到 /tmp（默认）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
+# 获取文档并保存到临时文件
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "https://xxx.feishu.cn/wiki/xxx"
 
 # 输出示例：
 # {
@@ -75,69 +80,52 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fet
 # }
 
 # 指定输出目录
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx" --output-dir ./output
-```
-
-#### 2. 处理已保存的文档文件
-
-```bash
-# 转换为 Markdown（输出到 stdout）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "https://xxx.feishu.cn/wiki/xxx" --output-dir ./output
 
 # 获取文档大纲
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" outline /tmp/document_xxx_blocks.json
 
-# 获取文档摘要
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
-
-# 保存到文件
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown --output result.md
-```
-
-**支持的格式**：
-- `--format markdown` - 转换为 Markdown（默认）
-- `--format outline` - 提取文档大纲
-- `--format summary` - 输出文档摘要（JSON）
-
-#### 3. 底层工具调用（可选）
-
-```bash
 # 列出所有工具
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --list
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" list
 
 # 获取工具描述
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --describe get_feishu_document_blocks
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" describe get_feishu_document_blocks
 
-# 直接调用工具（注意：响应可能很大）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --call get_feishu_document_info \
+# 直接调用工具
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" call get_feishu_document_info \
   --args '{"documentId": "https://xxx.feishu.cn/wiki/xxx", "documentType": "wiki"}'
 ```
 
-#### 4. Python API
+#### 2. Python API（动态场景推荐）
 
 ```python
 import sys
 sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
 
-from mcp_client import fetch_document, process_document
+from client import FeishuMCPClient
+from document import save_document, get_outline
 
-# 获取文档并保存到临时文件（推荐）
-result = fetch_document("https://xxx.feishu.cn/wiki/xxx")
+# 保存文档
+result = save_document("https://xxx.feishu.cn/wiki/xxx")
 print(f"Markdown 文件: {result['markdown_file']}")
 
-# 处理已保存的文件
-markdown = process_document(result['blocks_file'], format="markdown")
-print(markdown[:500])  # 只打印前500字符
+# 提取目录
+outline = get_outline(result["blocks_file"])
+
+# 底层调用
+client = FeishuMCPClient()
+info = client.call("get_feishu_document_info", {"documentId": "xxx"})
 ```
 
 ## ⚠️ Best Practices
 
-> **CRITICAL: Use mcp_client.py as Entry Point**
+> **CRITICAL: Use cli.py as Entry Point**
 >
-> 所有操作都应通过 `mcp_client.py` 进行：
+> CLI 操作应通过 `cli.py` 进行：
 >
-> ✅ **DO** - 使用 `mcp_client.py --fetch` 获取文档
-> ✅ **DO** - 使用 `mcp_client.py --process` 处理文档
+> ✅ **DO** - 使用 `cli.py save` 获取文档
+> ✅ **DO** - 使用 `cli.py outline` 提取大纲
+> ✅ **DO** - 使用 Python API 进行动态操作
 > ❌ **DON'T** - 直接调用底层 Python 模块
 >
 > **Why?**
@@ -150,7 +138,7 @@ print(markdown[:500])  # 只打印前500字符
 
 查看完整列表：
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --list
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" list
 ```
 
 常用工具：
@@ -175,8 +163,15 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --lis
 
 | Script | Purpose | CLI Usage |
 |--------|---------|-----------|
-| `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch URL` / `--process FILE` / `--call TOOL` |
-| `setup_feishu.py` | 交互式凭证配置 | 直接运行 |
+| `cli.py` | **CLI 入口**：获取文档、提取大纲、调用工具 | `save URL` / `outline FILE` / `call TOOL` |
+| `setup.py` | 交互式凭证配置 | 直接运行 |
+
+Python API（动态场景推荐）：
+
+```python
+from client import FeishuMCPClient
+from document import save_document, get_outline
+```
 
 ## Token Efficiency
 
@@ -211,32 +206,34 @@ When invoked, the command will:
 
 ### For General Text Analysis (wikis, notes)
 
-使用 `mcp_client.py --fetch` 和 `--process` 命令：
+使用 `cli.py save` 和 `cli.py outline` 命令：
 
 ```bash
 # 1. 获取文档并保存到临时文件
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "https://xxx.feishu.cn/wiki/xxx"
 
-# 2. 处理文档（转换为 Markdown）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
-
-# 3. 或获取文档大纲
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
+# 2. 获取文档大纲
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" outline /tmp/document_xxx_blocks.json
 ```
 
 ### For Data Querying (tables, schedules, lists)
 
 ```bash
 # 1. 获取文档并保存到临时文件
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "https://xxx.feishu.cn/wiki/xxx"
 
-# 2. 查看文档摘要（包含表格信息）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
+# 2. 使用 Python API 分析数据
+python -c "
+import sys
+sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts')
+from document import get_outline
+print(get_outline('/tmp/document_xxx_blocks.json'))
+"
 ```
 
 ## Error Handling
 
-- **Credentials not configured**: Run `python scripts/setup_feishu.py` or set environment variables
+- **Credentials not configured**: Run `python scripts/setup.py` or set environment variables
 - **mcp package not installed**: `pip install mcp`
 - **Permission Denied**: Check document access or bot visibility
 - **API Errors**: Verify credentials in `~/.feishu-mcp/config.json`
