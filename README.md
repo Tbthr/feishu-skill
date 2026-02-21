@@ -30,7 +30,7 @@
 
 ```bash
 # 运行配置脚本
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/setup_feishu.py"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/setup.py"
 ```
 
 按提示输入你的飞书 **App ID** 和 **App Secret**。
@@ -89,7 +89,7 @@ wiki:wiki:readonly
 
 ```bash
 # 获取文档并保存到临时文件（推荐）
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxxxx"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "https://xxx.feishu.cn/wiki/xxxxx"
 
 # 输出：
 # {
@@ -99,10 +99,8 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fet
 #   "markdown_file": "/tmp/document_G85TdPCcTo91CYx4aYzcLKCnnFe.md"
 # }
 
-# 处理已保存的文档
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
+# 获取文档大纲
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" outline /tmp/document_xxx_blocks.json
 ```
 
 ## 实现原理
@@ -115,8 +113,8 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --pro
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌───────────────┐      ┌──────────────────────────────┐  │
-│  │ feishu-analyst│─────▶│  mcp_client.py               │  │
-│  │    Skill      │      │  --fetch / --process         │  │
+│  │ feishu-analyst│─────▶│  cli.py                      │  │
+│  │    Skill      │      │  save / outline / call       │  │
 │  │               │      │                              │  │
 │  │               │      │  ┌────────────────────────┐  │  │
 │  │               │      │  │ executor.py            │  │  │
@@ -147,16 +145,23 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --pro
 
 | 脚本 | 功能 | CLI |
 |------|------|-----|
-| `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch` / `--process` / `--call` |
-| `setup_feishu.py` | 交互式凭证配置 | 直接运行 |
+| `cli.py` | **CLI 入口**：获取文档、提取大纲、调用工具 | `save` / `outline` / `call` |
+| `setup.py` | 交互式凭证配置 | 直接运行 |
+
+**Python API**：
+
+```python
+from client import FeishuMCPClient
+from document import save_document, get_outline
+```
 
 **底层模块**（内部实现）：
 
 | 模块 | 功能 |
 |------|------|
 | `executor.py` | 零上下文 MCP 执行器，启动 Feishu MCP Server |
-| `document_processor.py` | 文档处理：Markdown 转换、大纲提取、摘要生成 |
-| `table_processor.py` | 表格数据提取和格式化 |
+| `processor.py` | 文档处理：Markdown 转换、大纲提取、摘要生成 |
+| `table.py` | 表格数据提取和格式化 |
 | `validator.py` | MCP 响应验证、错误提取 |
 | `logger.py` | MCP 调用日志记录 |
 
@@ -181,13 +186,18 @@ feishu-skill/
     └── feishu-analyst/
         ├── SKILL.md               # Skill 定义文件
         ├── scripts/
-        │   ├── mcp_client.py      # 统一 CLI 入口 ⭐
-        │   ├── setup_feishu.py    # 凭证配置脚本 ⭐
+        │   ├── __init__.py        # 导出公共 API
+        │   ├── cli.py             # CLI 入口 ⭐
+        │   ├── client.py          # FeishuMCPClient ⭐
+        │   ├── document.py        # save_document/get_outline ⭐
+        │   ├── setup.py           # 凭证配置脚本 ⭐
         │   ├── executor.py        # 零上下文 MCP 执行器
-        │   ├── document_processor.py  # 文档处理
-        │   ├── table_processor.py     # 表格处理
-        │   ├── validator.py           # 响应验证
-        │   └── logger.py              # 日志记录
+        │   ├── processor.py       # 文档处理
+        │   ├── table.py           # 表格处理
+        │   ├── search.py          # 搜索处理
+        │   ├── creation.py        # 创建处理
+        │   ├── validator.py       # 响应验证
+        │   └── logger.py          # 日志记录
         └── references/
             └── prd_checklist.md   # PRD 分析清单
 ```
@@ -197,7 +207,7 @@ feishu-skill/
 ### 凭证未配置
 
 ```bash
-python skills/feishu-analyst/scripts/setup_feishu.py
+python skills/feishu-analyst/scripts/setup.py
 ```
 
 ### 权限错误
