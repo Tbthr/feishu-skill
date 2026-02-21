@@ -146,11 +146,7 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --pro
 | 脚本 | 功能 | CLI |
 |------|------|-----|
 | `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch` / `--process` / `--call` |
-| `executor.py` | 底层 MCP 执行器（零上下文） | `--list` / `--call` |
 | `setup_feishu.py` | 交互式凭证配置 | 直接运行 |
-| `document_processor.py` | 文档处理、Markdown 转换 | Python import |
-| `validator.py` | 响应验证、错误提取 | Python import |
-| `table_processor.py` | 表格数据提取 | Python import |
 
 ### Slash Commands
 
@@ -174,14 +170,8 @@ feishu-skill/
         ├── SKILL.md               # Skill 定义文件
         ├── scripts/
         │   ├── mcp_client.py      # 统一 CLI 入口 ⭐
-        │   ├── executor.py        # 零上下文 MCP 执行器 ⭐
         │   ├── setup_feishu.py    # 凭证配置脚本 ⭐
-        │   ├── document_processor.py
-        │   ├── table_processor.py
-        │   ├── search_processor.py
-        │   ├── creation_processor.py
-        │   ├── validator.py
-        │   └── logger.py
+        │   └── ...                # 其他内部模块
         └── references/
             └── prd_checklist.md   # PRD 分析清单
 ```

@@ -132,22 +132,26 @@ print(markdown[:500])  # 只打印前500字符
 
 ## ⚠️ Best Practices
 
-> **CRITICAL: Use Built-in Scripts**
+> **CRITICAL: Use mcp_client.py as Entry Point**
 >
-> This skill includes pre-built, tested Python scripts in `scripts/`:
+> 所有操作都应通过 `mcp_client.py` 进行：
 >
-> ✅ **DO** - Import and use `DocumentProcessor`, `MCPResponseValidator`, etc.
-> ❌ **DON'T** - Write your own JSON parser for Feishu blocks
+> ✅ **DO** - 使用 `mcp_client.py --fetch` 获取文档
+> ✅ **DO** - 使用 `mcp_client.py --process` 处理文档
+> ❌ **DON'T** - 直接调用底层 Python 模块
 >
 > **Why?**
-> - Built-in scripts handle **47 block types** (your parser will miss many)
-> - Includes **error handling** for edge cases (malformed responses, nested structures)
-> - **Actively maintained** with bug fixes
-> - Saves tokens and time
+> - 内置脚本处理 **47 种块类型**（自定义解析器会遗漏很多）
+> - 包含 **错误处理** 和边界情况处理
+> - **持续维护** 和 bug 修复
+> - 零上下文设计，节省 tokens
 
 ## 可用工具
 
-查看完整列表：`python executor.py --list`
+查看完整列表：
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --list
+```
 
 常用工具：
 - `get_feishu_document_info` - 获取文档信息（支持 wiki/docx）
@@ -167,19 +171,12 @@ print(markdown[:500])  # 只打印前500字符
 
 ## Available Scripts
 
-Located in `scripts/`:
+用户入口脚本（位于 `scripts/`）：
 
 | Script | Purpose | CLI Usage |
 |--------|---------|-----------|
-| `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `python mcp_client.py --fetch URL` / `--process FILE` / `--call TOOL` |
-| `executor.py` | 底层 MCP 执行器 | `python executor.py --list` / `--call` |
-| `setup_feishu.py` | 交互式凭证配置 | `python setup_feishu.py` |
-| `document_processor.py` | 文档处理（Markdown/大纲/摘要） | Python import only |
-| `validator.py` | 响应验证、错误提取 | Python import only |
-| `table_processor.py` | 表格数据提取 | Python import only |
-| `search_processor.py` | 搜索结果格式化 | Python import only |
-| `creation_processor.py` | 创建响应解析 | Python import only |
-| `logger.py` | MCP 调用日志 | Python import only |
+| `mcp_client.py` | **统一入口**：获取文档、处理文档、调用工具 | `--fetch URL` / `--process FILE` / `--call TOOL` |
+| `setup_feishu.py` | 交互式凭证配置 | 直接运行 |
 
 ## Token Efficiency
 
@@ -214,37 +211,27 @@ When invoked, the command will:
 
 ### For General Text Analysis (wikis, notes)
 
-> ⚠️ **Use the built-in `DocumentProcessor`** - don't write custom parsers!
+使用 `mcp_client.py --fetch` 和 `--process` 命令：
 
-```python
-import sys
-sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
+```bash
+# 1. 获取文档并保存到临时文件
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
 
-from mcp_client import call_feishu_tool
-from document_processor import DocumentProcessor
+# 2. 处理文档（转换为 Markdown）
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
 
-# 获取文档块
-blocks = call_feishu_tool("get_feishu_document_blocks", {"documentId": doc_id})
-
-# 转换为 Markdown
-processor = DocumentProcessor()
-markdown = processor.to_markdown(blocks)
+# 3. 或获取文档大纲
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
 ```
 
 ### For Data Querying (tables, schedules, lists)
-```python
-import sys
-sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts")
 
-from mcp_client import call_feishu_tool
-from table_processor import TableProcessor
+```bash
+# 1. 获取文档并保存到临时文件
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "https://xxx.feishu.cn/wiki/xxx"
 
-# 获取文档块
-blocks = call_feishu_tool("get_feishu_document_blocks", {"documentId": doc_id})
-
-# 提取表格数据
-processor = TableProcessor()
-tables = processor.extract_tables(blocks)
+# 2. 查看文档摘要（包含表格信息）
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
 ```
 
 ## Error Handling
@@ -267,7 +254,7 @@ A dedicated slash command `/feishu-prd-analyse` is available for PRD analysis:
 
 **Analyze a PRD Document:**
 ```
-/feishu-prd-analyse https://dy3m1s1v7v.feishu.cn/docx/CgMCdRMh8oMtDKxVcURcrb0DnVr
+/feishu-prd-analyse https://dy3m1s1v7v.feishu.cn/docx/xxx
 ```
 
 **Analyze a Wiki PRD:**
