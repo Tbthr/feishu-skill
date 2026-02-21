@@ -1,18 +1,18 @@
 ---
 description: "Analyze Feishu PRD documents using the feishu-analyst skill with auto-loaded PRD checklist framework"
-allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py:*)"]
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py:*)"]
 ---
 
 You are analyzing a Product Requirements Document (PRD) from Feishu. Follow these steps:
 
 ## 执行步骤
 
-### 1. 获取文档（推荐：使用 --fetch 保存到临时文件）
+### 1. 获取文档（推荐：使用 save 保存到临时文件）
 
-> ⚠️ **重要**：使用 `--fetch` 将文档保存到临时文件，**避免文档内容注入 context**。
+> ⚠️ **重要**：使用 `cli.py save` 将文档保存到临时文件，**避免文档内容注入 context**。
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fetch "<FEISHU_URL>"
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" save "<FEISHU_URL>"
 
 # 输出示例：
 # {
@@ -23,17 +23,11 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --fet
 # }
 ```
 
-### 2. 处理文档
+### 2. 提取文档大纲
 
 ```bash
-# 转换为 Markdown
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format markdown
-
 # 获取文档大纲
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format outline
-
-# 获取文档摘要
-python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/mcp_client.py" --process /tmp/document_xxx_blocks.json --format summary
+python "${CLAUDE_PLUGIN_ROOT}/skills/feishu-analyst/scripts/cli.py" outline /tmp/document_xxx_blocks.json
 ```
 
 ### 3. 应用 PRD 分析框架
@@ -57,7 +51,7 @@ Apply the systematic analysis framework across 4 dimensions:
   - All embedded content
 - Ensure no blocks are skipped or truncated
 - Verify the document has been fully read before proceeding with analysis
-- **ALWAYS use --fetch to save document to file, avoid loading content into context**
+- **ALWAYS use cli.py save to save document to file, avoid loading content into context**
 
 ## 输出格式
 
