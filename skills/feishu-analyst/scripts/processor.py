@@ -37,6 +37,96 @@ class InlineStyle:
     styled_text: str = ""
 
 
+# Text color ID to RGB mapping (based on Feishu API)
+TEXT_COLOR_MAP = {
+    1: "rgb(143,149,158)",   # 灰色
+    2: "rgb(222,120,2)",     # 棕色
+    3: "rgb(220,155,4)",     # 橙色
+    4: "rgb(46,161,33)",     # 黄色（实际是绿色系）
+    5: "rgb(36,91,219)",     # 绿色（实际是蓝色）
+    6: "rgb(100,37,208)",    # 蓝色（实际是紫色）
+    7: "rgb(216,57,49)",     # 紫色（实际是红色）
+}
+
+# Background color ID to RGBA mapping (based on Feishu API)
+BG_COLOR_MAP = {
+    1: "rgba(143,149,158,0.2)",   # 灰色
+    2: "rgba(222,120,2,0.2)",     # 棕色
+    3: "rgba(220,155,4,0.2)",     # 橙色
+    4: "rgba(183,237,177,0.8)",   # 黄色/绿色高亮
+    5: "rgba(36,91,219,0.2)",     # 绿色/蓝色
+    6: "rgba(100,37,208,0.2)",    # 蓝色/紫色
+    7: "rgba(216,57,49,0.2)",     # 紫色/红色
+}
+
+# Code block language ID to name mapping (based on Feishu API)
+LANGUAGE_MAP = {
+    1: "plain",
+    2: "abap",
+    3: "ada",
+    4: "apache",
+    5: "apex",
+    6: "applescript",
+    7: "c",
+    8: "cpp",
+    9: "csharp",
+    10: "css",
+    11: "clojure",
+    12: "coffeescript",
+    13: "dart",
+    14: "diff",
+    15: "dockerfile",
+    16: "django",
+    17: "erlang",
+    18: "fortran",
+    19: "foxpro",
+    20: "go",
+    21: "groovy",
+    22: "haskell",
+    23: "html",
+    24: "java",
+    25: "javascript",
+    26: "json",
+    27: "julia",
+    28: "kotlin",
+    29: "less",
+    30: "javascript",  # 30 is also JavaScript
+    31: "lisp",
+    32: "lua",
+    33: "makefile",
+    34: "markdown",
+    35: "matlab",
+    36: "objectivec",
+    37: "pascal",
+    38: "perl",
+    39: "php",
+    40: "powershell",
+    41: "puppet",
+    42: "python",
+    43: "r",
+    44: "ruby",
+    45: "rust",
+    46: "sass",
+    47: "scala",
+    48: "scheme",
+    49: "python",  # 49 is also Python
+    50: "shell",
+    51: "sql",
+    52: "swift",
+    53: "typescript",
+    54: "vb",
+    55: "verilog",
+    56: "vhdl",
+    57: "xml",
+    58: "yaml",
+    59: "toml",
+    60: "cmake",
+    61: "dart",
+    62: "dockerfile",
+    63: "typescript",  # 63 is also TypeScript
+}
+
+
 @dataclass
 class BlockInfo:
     """Simplified block information"""
@@ -406,7 +496,7 @@ class DocumentProcessor:
         """
         Extract text content with inline styles converted to Markdown.
 
-        Handles: bold, italic, strikethrough, underline, code, links
+        Handles: bold, italic, strikethrough, underline, inline_code, links, equations, colors
 
         Args:
             text_data: Text data dict from Feishu API (contains 'elements')
@@ -421,6 +511,15 @@ class DocumentProcessor:
         result_parts = []
 
         for elem in elements:
+            # Check for equation first (math formula)
+            equation = elem.get("equation", {})
+            if equation:
+                formula = equation.get("content", "")
+                if formula:
+                    # Output as LaTeX math formula
+                    result_parts.append(f"$${formula}$$")
+                    continue
+
             text_run = elem.get("text_run", {})
             content = text_run.get("content", "")
 
@@ -450,29 +549,39 @@ class DocumentProcessor:
             # Get text element style
             style = text_run.get("text_element_style", {})
 
-            # Apply styles in correct order (strikethrough -> underline -> italic -> bold)
-            # Note: Markdown doesn't support underline, we'll use HTML for that
-            if style.get("strikethrough"):
-                content = f"~~{content}~~"
-            if style.get("underline"):
-                content = f"<u>{content}</u>"
-            if style.get("italic"):
-                content = f"*{content}*"
-            if style.get("bold"):
-                content = f"**{content}**"
+            # Only apply styles if content is not just whitespace
+            # (avoids styling empty newlines which causes **\n** artifacts)
+            should_apply_styles = content.strip() != ""
 
-            # Check for inline code (code style)
-            if style.get("code"):
-                content = f"`{content}`"
+            if should_apply_styles:
+                # Apply styles in correct order (strikethrough -> underline -> italic -> bold)
+                # Note: Markdown doesn't support underline, we'll use HTML for that
+                if style.get("strikethrough"):
+                    content = f"~~{content}~~"
+                if style.get("underline"):
+                    content = f"<u>{content}</u>"
+                if style.get("italic"):
+                    content = f"*{content}*"
+                if style.get("bold"):
+                    content = f"**{content}**"
+
+                # Check for inline code (use inline_code field name)
+                if style.get("inline_code"):
+                    content = f"`{content}`"
 
             # Check for color/background (use HTML for these)
-            color = style.get("color")
-            bg_color = style.get("background")
-            if color or bg_color:
-                color_style = f"color:{color}" if color else ""
-                bg_style = f"background-color:{bg_color}" if bg_color else ""
-                styles = ";".join(s for s in [color_style, bg_style] if s)
-                content = f'<span style="{styles}">{content}</span>'
+            color_id = style.get("text_color")
+            bg_color_id = style.get("background_color")
+            if color_id or bg_color_id:
+                color_style = ""
+                bg_style = ""
+                if color_id and color_id in TEXT_COLOR_MAP:
+                    color_style = f"color: {TEXT_COLOR_MAP[color_id]}"
+                if bg_color_id and bg_color_id in BG_COLOR_MAP:
+                    bg_style = f"background-color: {BG_COLOR_MAP[bg_color_id]}"
+                styles = "; ".join(s for s in [color_style, bg_style] if s)
+                if styles:
+                    content = f'<span style="{styles}">{content}</span>'
 
             result_parts.append(content)
 
@@ -632,7 +741,7 @@ class DocumentProcessor:
                         inline_text = styled
 
                 # Check list items (bullet, ordered, todo)
-                # List items use "bullet" field with elements
+                # Bullet items use "bullet" field with elements
                 if "bullet" in block and isinstance(block["bullet"], dict):
                     bullet_data = block["bullet"]
                     plain, styled = extract_from_data(bullet_data, for_inline=True)
@@ -641,9 +750,18 @@ class DocumentProcessor:
                     if styled and not inline_text:
                         inline_text = styled
 
-                    # Check for todo/checkbox done state
-                    if block_type == 16:  # todo
-                        checked = block.get("todo", {}).get("done", False)
+                # Ordered items use "ordered" field with elements
+                if "ordered" in block and isinstance(block["ordered"], dict):
+                    ordered_data = block["ordered"]
+                    plain, styled = extract_from_data(ordered_data, for_inline=True)
+                    if plain and not text:
+                        text = plain
+                    if styled and not inline_text:
+                        inline_text = styled
+
+                # Check for todo/checkbox done state
+                if block_type == 16:  # todo
+                    checked = block.get("todo", {}).get("done", False)
 
                 # Get heading level if applicable
                 # heading1 (type=3) -> level=1, heading3 (type=5) -> level=3
@@ -726,7 +844,13 @@ class DocumentProcessor:
                 items.append(("ordered", text, None))
 
             elif block_type == 14:  # code
-                items.append(("code", text, None))
+                # Get code block language from block data
+                block_data = block_map.get(block.block_id, {})
+                code_data = block_data.get("code", {})
+                style = code_data.get("style", {})
+                lang_id = style.get("language", 1)
+                lang_name = LANGUAGE_MAP.get(lang_id, "")
+                items.append(("code", text, lang_name))
 
             elif block_type == 15:  # quote
                 items.append(("quote", text, None))
@@ -791,7 +915,8 @@ class DocumentProcessor:
                 checkbox = "- [x]" if checked else "- [ ]"
                 lines.append(f"{checkbox} {content}")
             elif item_type == "code":
-                lines.append("```")
+                lang = extra if extra else ""
+                lines.append(f"```{lang}")
                 lines.append(content)
                 lines.append("```")
                 lines.append("")
