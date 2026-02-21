@@ -160,10 +160,7 @@ from document import save_document, get_outline
 | 模块 | 功能 |
 |------|------|
 | `executor.py` | 零上下文 MCP 执行器，启动 Feishu MCP Server |
-| `processor.py` | 文档处理：Markdown 转换、大纲提取、摘要生成 |
-| `table.py` | 表格数据提取和格式化 |
-| `validator.py` | MCP 响应验证、错误提取 |
-| `logger.py` | MCP 调用日志记录 |
+| `processor.py` | 文档处理：Markdown 转换、大纲提取、表格处理 |
 
 ### Slash Commands
 
@@ -192,12 +189,7 @@ feishu-skill/
         │   ├── document.py        # save_document/get_outline ⭐
         │   ├── setup.py           # 凭证配置脚本 ⭐
         │   ├── executor.py        # 零上下文 MCP 执行器
-        │   ├── processor.py       # 文档处理
-        │   ├── table.py           # 表格处理
-        │   ├── search.py          # 搜索处理
-        │   ├── creation.py        # 创建处理
-        │   ├── validator.py       # 响应验证
-        │   └── logger.py          # 日志记录
+        │   └── processor.py       # 文档处理（含表格）
         └── references/
             └── prd_checklist.md   # PRD 分析清单
 ```
