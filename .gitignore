@@ -46,3 +46,4 @@ scope_*.json
 # Claude specific
 .claude/settings.json
 *.log
+.worktrees/
